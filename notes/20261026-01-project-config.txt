@@ -1,0 +1,67 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2026, University of Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this software. If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Setup the project and platform configuration files for Lithosia.
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    Project specific configuration, checked in as part of the source code.
+    `${CALYCOPIS_CODE}/lithosia-project.yaml`
+
+```
+lithosia:
+  copyright:
+    owner: "University of Manchester (http://www.manchester.ac.uk/)"
+  license:
+    SPDX-ID: "GPL-3.0"
+```
+
+
+    Local configuration, excluded by .gitignore, overrides global
+    settings with values specific to this clone.
+    `${CALYCOPIS_CODE}/lithosia-local.yaml`
+
+```
+lithosia:
+  agent:
+    token: "/run/secrets/dsh-github-token-zarquan"
+```
+
+
+    Platform (destop/laptop) Docker env file for Lithosia,
+    added as part of the Podman launch command
+    `${HOME}/lithosia-agent.env`
+
+```
+LITHOSIA_AGENT_TITLE="DeepSeek Harness"
+LITHOSIA_AGENT_EMAIL="zrq-github+dsh@metagrid.co.uk"
+```
+
