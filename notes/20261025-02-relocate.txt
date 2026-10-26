@@ -1,0 +1,300 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (c) 2026, University of Manchester (http://www.manchester.ac.uk/)
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this software. If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Update the DSH session files for
+        `lithosia-quadra`
+        to change the workspace location from
+        `/Zarquan/lithosia-quadra`
+        to
+        `/Zarquan/Lithosia-Quadra`
+
+    Result:
+
+        Work in progress ...
+
+# -----------------------------------------------------
+
+    Move our scratch volume from Calycopis to Agents.
+
+cat >> "${HOME}/agents.env" << 'EOF'
+AGENTS_SCRATCH="${PROJECTS_ROOT:?}/Agents/scratch"
+EOF
+
+
+    source "${HOME}/agents.env"
+    source "${HOME}/projects.env"
+    source "${HOME}/calycopis.env"
+
+    mkdir "${PROJECTS_ROOT:?}/Agents"
+
+    mv "${CALYCOPIS_ROOT:?}/agents/scratch" \
+       "${PROJECTS_ROOT:?}/Agents/scratch"
+
+    vi "${HOME}/calycopis.env"
+        -   CALYCOPIS_SCRATCH="${CALYCOPIS_ROOT:?}/agents/scratch"
+        +   CALYCOPIS_SCRATCH="${PROJECTS_ROOT:?}/Agents/scratch"
+
+    vi "${HOME}/lithosia.env"
+        +   LITHOSIA_SCRATCH="${PROJECTS_ROOT:?}/Agents/scratch"
+
+    Mount the scratch volume in several places
+
+        --volume "${AGENTS_SCRATCH:?}:/Calycopis/agents/scratch:rw,Z" \
+        --volume "${AGENTS_SCRATCH:?}:/Zarquan/agents/scratch:rw,Z" \
+        --volume "${AGENTS_SCRATCH:?}:/Zarquan/lithosia-quadra/agents/scratch:rw,Z" \
+
+# -----------------------------------------------------
+
+==START==
+I would like to migrate the sessions in the `lithosia-quadra` workspace
+to the `Zarquan` workspace.
+
+Can you create a shell script in `/Zarquan/lithosia-quadra/agents/scratch`
+that uses the migration tools to move the sessions in the `lithosia-quadra`
+workspace to the `Zarquan` workspace and update the directory paths from
+`/Zarquan/lithosia-quadra` to `/Zarquan/Lithosia-docker`.
+
+I will then take the agent container off-line, move the local git clone of
+`lithosia-quadra` to the new location, update the podman volume mount
+to place LITHOSIA_CODE at `/Zarquan/Lithosia-docker`, and then run your
+shell script to update the DSH session metadata.
+==END==
+
+--START--
+....
+....
+--END--
+
+
+==START==
+Option 3 - Keep /Zarquan at /Zarquan.
+The aim is to end up with two workspaces /Zarquan and /Calycopis,
+with session in the current `lithosia-quadra` workspace merged into the `/Zarquan` workspace.
+At the same time, the location of the project source code would be moved to a
+sub-directory of the workspace `/Zarquan/Lithosia-docker`, which I will create
+while the agent's container is off-line.
+The end result is that sessions in the `/Zarquan` workspace will include projects in
+`/Zarquan/Phyllonorycter-archive/`, `/Zarquan/Jordanita/` and `/Zarquan/Lithosia-docker`.
+==END==
+
+--START--
+....
+....
+--END--
+
+
+# -----------------------------------------------------
+
+    #
+    # Restarted the agent container with updated volume mounts.
+    #
+
+# -----------------------------------------------------
+
+    cd /Zarquan/Lithosia-docker
+    ./agents/scratch/migrate-sessions-to-zarquan.sh
+
+--START--
+....
+....
+--END--
+
+
+    ./agents/scratch/migrate-sessions-to-zarquan.sh --apply
+
+--START--
+DSH session migration: /Zarquan/lithosia-quadra -> /Zarquan
+Transcript: /Zarquan/Lithosia-docker/agents/scratch/migrate-sessions-to-zarquan-20261025T154543Z.log
+
+DSH home        : /opt/dsh
+Sessions root   : /opt/dsh/sessions
+Backup root     : /opt/dsh/backups
+Source workspace: /Zarquan/lithosia-quadra
+Target workspace: /Zarquan (Zarquan)
+Code root       : /Zarquan/Lithosia-docker
+Migration tool  : /Zarquan/Lithosia-docker/tools/migration/migrate-sessions-to-top-level.mjs
+Sessions        : 6 selected
+
+  session-defe478b-db5d-40dc-b461-a2a793eef2d9
+  session-8692a1f7-50f3-4d32-a75f-843268ad5016
+  session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+  session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+  session-15168463-ea16-4eb5-8962-f2258b346e11
+  session-3552ae53-56f8-420d-8410-abf61e435ab4
+
+== Preview ==
+Target workspace : /Zarquan
+Sessions root    : /opt/dsh/sessions
+Only             : session-defe478b-db5d-40dc-b461-a2a793eef2d9, session-8692a1f7-50f3-4d32-a75f-843268ad5016, session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7, session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f, session-15168463-ea16-4eb5-8962-f2258b346e11, session-3552ae53-56f8-420d-8410-abf61e435ab4
+Sessions to move : 6
+  session-defe478b-db5d-40dc-b461-a2a793eef2d9
+      --Zarquan-lithosia-quadra--/session-defe478b-db5d-40dc-b461-a2a793eef2d9
+   -> --Zarquan--/session-defe478b-db5d-40dc-b461-a2a793eef2d9
+  session-8692a1f7-50f3-4d32-a75f-843268ad5016
+      --Zarquan-lithosia-quadra--/session-8692a1f7-50f3-4d32-a75f-843268ad5016
+   -> --Zarquan--/session-8692a1f7-50f3-4d32-a75f-843268ad5016
+  session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+      --Zarquan-lithosia-quadra--/session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+   -> --Zarquan--/session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+  session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+      --Zarquan-lithosia-quadra--/session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+   -> --Zarquan--/session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+  session-15168463-ea16-4eb5-8962-f2258b346e11
+      --Zarquan-lithosia-quadra--/session-15168463-ea16-4eb5-8962-f2258b346e11
+   -> --Zarquan--/session-15168463-ea16-4eb5-8962-f2258b346e11
+  session-3552ae53-56f8-420d-8410-abf61e435ab4
+      --Zarquan-lithosia-quadra--/session-3552ae53-56f8-420d-8410-abf61e435ab4
+   -> --Zarquan--/session-3552ae53-56f8-420d-8410-abf61e435ab4
+Not selected     : 25 (excluded by --only)
+  session-6552c04c-ebf2-492c-8719-94ed91f196ea
+  session-e957496e-16f8-408c-8b7d-22dae7559b27
+  session-5b84e61b-f15d-4704-8d9f-8cdf17824ad1
+  session-47755109-973e-49db-bc55-c3f83b465b71
+  session-7cbf7ecc-de76-4222-9eed-efad9ecba041
+  session-3a2fc652-00bb-4e34-b8b1-81ac059e8c0f
+  session-630ab73b-f03b-435b-b476-40a04ad7b2f3
+  session-87e73cc5-b8a0-40d0-b976-e0f553a49023
+  session-fe6e1711-cc3a-461e-ab72-8142091b26a9
+  session-c83dd4cc-b193-49a6-8a2e-3c2f1bfb8b60
+  session-23015b54-51f6-4d87-8e7e-703ed4d3ab4f
+  session-5d2fb2cf-a50e-4d6a-addd-7a3da2fc6c30
+  session-f9031600-9511-409c-91af-3ed5a3577dd0
+  session-7b69aa71-690b-454b-86dc-9eb5e4c9af2c
+  session-4204abe2-31e9-46bb-a133-f1362b4bdc02
+  session-c70a1cb9-5373-41d3-aaa4-2ee49cf1be33
+  session-9afd4ac9-d119-40c7-8f8e-af28c50d7237
+  session-7ecefc0d-8c14-4979-8290-5d4f8aa0cf4d
+  session-e11a614e-049a-411a-a2c7-901f22e084c2
+  session-f510c52e-143b-4685-b418-72a78f78a246
+  session-506a87a0-9143-437c-965d-66357ef6834a
+  session-a510a3f9-addc-457d-bf11-39b319b9c971
+  session-cea55dc4-5c4f-481a-835d-986d0107b00f
+  session-d50bf2a3-be88-43dc-a07f-6116af81437d
+  session-2aa91ef6-45f3-48f2-8ded-2bed8bc64e09
+Skipped          : 3
+  session-0dacc875-de58-4c78-8c92-e933dc05f71c: already on target workspace
+  session-43b678d6-7dfa-4e2c-9f0f-8b047a6c2d12: already on target workspace
+  session-abec5fa7-d1ca-4b9e-9b5d-e7955590bf72: already on target workspace
+
+Dry run: nothing was written.
+
+About to rewrite durable DSH state under:
+  /opt/dsh
+  6 session(s): /Zarquan/lithosia-quadra -> /Zarquan
+A backup is written first, under /opt/dsh/backups.
+Proceed? [y/N] y
+
+== Apply ==
+Target workspace : /Zarquan
+Sessions root    : /opt/dsh/sessions
+Only             : session-defe478b-db5d-40dc-b461-a2a793eef2d9, session-8692a1f7-50f3-4d32-a75f-843268ad5016, session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7, session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f, session-15168463-ea16-4eb5-8962-f2258b346e11, session-3552ae53-56f8-420d-8410-abf61e435ab4
+Sessions to move : 6
+  session-defe478b-db5d-40dc-b461-a2a793eef2d9
+      --Zarquan-lithosia-quadra--/session-defe478b-db5d-40dc-b461-a2a793eef2d9
+   -> --Zarquan--/session-defe478b-db5d-40dc-b461-a2a793eef2d9
+  session-8692a1f7-50f3-4d32-a75f-843268ad5016
+      --Zarquan-lithosia-quadra--/session-8692a1f7-50f3-4d32-a75f-843268ad5016
+   -> --Zarquan--/session-8692a1f7-50f3-4d32-a75f-843268ad5016
+  session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+      --Zarquan-lithosia-quadra--/session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+   -> --Zarquan--/session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+  session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+      --Zarquan-lithosia-quadra--/session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+   -> --Zarquan--/session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+  session-15168463-ea16-4eb5-8962-f2258b346e11
+      --Zarquan-lithosia-quadra--/session-15168463-ea16-4eb5-8962-f2258b346e11
+   -> --Zarquan--/session-15168463-ea16-4eb5-8962-f2258b346e11
+  session-3552ae53-56f8-420d-8410-abf61e435ab4
+      --Zarquan-lithosia-quadra--/session-3552ae53-56f8-420d-8410-abf61e435ab4
+   -> --Zarquan--/session-3552ae53-56f8-420d-8410-abf61e435ab4
+Not selected     : 25 (excluded by --only)
+  session-6552c04c-ebf2-492c-8719-94ed91f196ea
+  session-e957496e-16f8-408c-8b7d-22dae7559b27
+  session-5b84e61b-f15d-4704-8d9f-8cdf17824ad1
+  session-47755109-973e-49db-bc55-c3f83b465b71
+  session-7cbf7ecc-de76-4222-9eed-efad9ecba041
+  session-3a2fc652-00bb-4e34-b8b1-81ac059e8c0f
+  session-630ab73b-f03b-435b-b476-40a04ad7b2f3
+  session-87e73cc5-b8a0-40d0-b976-e0f553a49023
+  session-fe6e1711-cc3a-461e-ab72-8142091b26a9
+  session-c83dd4cc-b193-49a6-8a2e-3c2f1bfb8b60
+  session-23015b54-51f6-4d87-8e7e-703ed4d3ab4f
+  session-5d2fb2cf-a50e-4d6a-addd-7a3da2fc6c30
+  session-f9031600-9511-409c-91af-3ed5a3577dd0
+  session-7b69aa71-690b-454b-86dc-9eb5e4c9af2c
+  session-4204abe2-31e9-46bb-a133-f1362b4bdc02
+  session-c70a1cb9-5373-41d3-aaa4-2ee49cf1be33
+  session-9afd4ac9-d119-40c7-8f8e-af28c50d7237
+  session-7ecefc0d-8c14-4979-8290-5d4f8aa0cf4d
+  session-e11a614e-049a-411a-a2c7-901f22e084c2
+  session-f510c52e-143b-4685-b418-72a78f78a246
+  session-506a87a0-9143-437c-965d-66357ef6834a
+  session-a510a3f9-addc-457d-bf11-39b319b9c971
+  session-cea55dc4-5c4f-481a-835d-986d0107b00f
+  session-d50bf2a3-be88-43dc-a07f-6116af81437d
+  session-2aa91ef6-45f3-48f2-8ded-2bed8bc64e09
+Skipped          : 3
+  session-0dacc875-de58-4c78-8c92-e933dc05f71c: already on target workspace
+  session-43b678d6-7dfa-4e2c-9f0f-8b047a6c2d12: already on target workspace
+  session-abec5fa7-d1ca-4b9e-9b5d-e7955590bf72: already on target workspace
+
+Backup written to /opt/dsh/backups/session-rebase-2026-10-25T15-45-50-675Z
+rewrote session-defe478b-db5d-40dc-b461-a2a793eef2d9/session.v4.jsonl.zstd
+moved   session-defe478b-db5d-40dc-b461-a2a793eef2d9 -> /opt/dsh/sessions/--Zarquan--/session-defe478b-db5d-40dc-b461-a2a793eef2d9
+rewrote session-8692a1f7-50f3-4d32-a75f-843268ad5016/session.v4.jsonl.zstd
+moved   session-8692a1f7-50f3-4d32-a75f-843268ad5016 -> /opt/dsh/sessions/--Zarquan--/session-8692a1f7-50f3-4d32-a75f-843268ad5016
+rewrote session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7/session.v4.jsonl.zstd
+moved   session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7 -> /opt/dsh/sessions/--Zarquan--/session-dbc8e68e-ec4d-4070-987a-a5774c3e18a7
+rewrote session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f/session.v4.jsonl.zstd
+moved   session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f -> /opt/dsh/sessions/--Zarquan--/session-d4e8d73f-29db-4b4c-876b-9f8f85bcc00f
+rewrote session-15168463-ea16-4eb5-8962-f2258b346e11/session.v4.jsonl.zstd
+moved   session-15168463-ea16-4eb5-8962-f2258b346e11 -> /opt/dsh/sessions/--Zarquan--/session-15168463-ea16-4eb5-8962-f2258b346e11
+rewrote session-3552ae53-56f8-420d-8410-abf61e435ab4/session.v4.jsonl.zstd
+moved   session-3552ae53-56f8-420d-8410-abf61e435ab4 -> /opt/dsh/sessions/--Zarquan--/session-3552ae53-56f8-420d-8410-abf61e435ab4
+workspace.json: 6 session(s) now accounted by '8700a6d1-64a1-482b-994e-43d0011b6015'; 9 total
+workspace.json: removed emptied project '/Zarquan/lithosia-quadra'
+projcache: updated /opt/dsh/storages/session_projcache/sessions (6)
+removed vacated project directory /opt/dsh/sessions/--Zarquan-lithosia-quadra--
+
+Done. 6 session(s) rebased onto /Zarquan.
+Restart the DSH host, then verify in the GUI.
+Rollback: node migrate-sessions-to-top-level.mjs --restore /opt/dsh/backups/session-rebase-2026-10-25T15-45-50-675Z --yes
+
+== Verification ==
+6 session(s) verified: header cwd '/Zarquan', accounted by the 'Zarquan' workspace, old directories removed
+
+Done. 6 session(s) from '/Zarquan/lithosia-quadra' are now in the 'Zarquan' workspace.
+Restart the DSH host and reload the GUI.
+
+Rollback (if needed):
+  node /Zarquan/Lithosia-docker/tools/migration/migrate-sessions-to-top-level.mjs --restore /opt/dsh/backups/session-rebase-2026-10-25T15-45-50-675Z --yes --dsh-home /opt/dsh --sessions-root /opt/dsh/sessions
+--END--
+
+
+
+
+

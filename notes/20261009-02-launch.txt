@@ -18,11 +18,7 @@
 #   </meta:licence>
 # </meta:header>
 #
-#zrq-notes-time
 #zrq-notes-indent
-#zrq-notes-crypto
-#zrq-notes-ansible
-#zrq-notes-osformat
 #
 # AIMetrics: []
 #
@@ -37,6 +33,8 @@
         Success - the DSH agent harness works with the separate volume mounts.
         Tested and documented by the AI agent itself in notes/20261009-01-dsh-home.txt.
 
+        ** DEPRECATED The undelying directory structure has changed and these notes are out of date. **
+        ** DEPRECATED See 20261025-03-launch.txt for more up to date insructions **
 
 # -----------------------------------------------------
 # Create a podman secrets for our GITHUB_TOKENs.
@@ -65,8 +63,11 @@ b4447fa6d9d4fb82f4a83b210
 # Launch the container with our projects mounted as volumes.
 #[user@desktop]
 
+    source "${HOME:?}/agents.env"
     source "${HOME:?}/lithosia.env"
     source "${HOME:?}/calycopis.env"
+    source "${HOME:?}/jordanita.env"
+
     source "${CALYCOPIS_CODE}/bin/container-host.sh"
 
     podman network create \
@@ -85,16 +86,26 @@ b4447fa6d9d4fb82f4a83b210
         --interactive \
         --pod    "lithosia-dsh-pod" \
         --name   "lithosia-dsh-container" \
+        --env    "SSH_AUTH_SOCK=/tmp/ssh-sock" \
+        --volume "${SSH_AUTH_SOCK}:/tmp/ssh-sock:rw,Z" \
         --env    "CONTAINER_HOST=unix:///run/podman/podman.sock" \
         --volume "${HOST_CONTAINER_PATH}:/run/podman/podman.sock:rw,Z" \
         --env    "CALYCOPIS_CODE=/Calycopis/Calycopis-broker" \
         --volume "${CALYCOPIS_CODE:?}:/Calycopis/Calycopis-broker:rw,Z" \
         --env    "CALYCOPIS_SCRATCH=/Calycopis/agents/scratch" \
-        --volume "${CALYCOPIS_SCRATCH:?}:/Calycopis/agents/scratch:rw,Z" \
+        --volume "${AGENTS_SCRATCH:?}:/Calycopis/agents/scratch:rw,Z" \
         --env    "TREBULA_CODE=/Calycopis/Calycopis-openapi" \
         --volume "${TREBULA_CODE:?}:/Calycopis/Calycopis-openapi:rw,Z" \
-        --env    "LITHOSIA_CODE=/Zarquan/lithosia-quadra" \
-        --volume "${LITHOSIA_CODE:?}:/Zarquan/lithosia-quadra:rw,Z" \
+        --env    "ISOBEON_CODE=/Calycopis/Calycopis-isobeon" \
+        --volume "${ISOBEON_CODE:?}:/Calycopis/Calycopis-isobeon:rw,Z" \
+        --env    "LITHOSIA_CODE=/Zarquan/Lithosia-docker" \
+        --volume "${LITHOSIA_CODE:?}:/Zarquan/Lithosia-docker:rw,Z" \
+        --env    "JORDANITA_CODE=/Zarquan/Jordanita" \
+        --volume "${JORDANITA_CODE:?}:/Zarquan/Jordanita:rw,Z" \
+        --env    "PHYLLONORYCTER_CODE=/Zarquan/Phyllonorycter-archive" \
+        --volume "${PHYLLONORYCTER_CODE:?}:/Zarquan/Phyllonorycter-archive:rw,Z" \
+        --env    "ZARQUAN_SCRATCH=/Zarquan/agents/scratch" \
+        --volume "${AGENTS_SCRATCH:?}:/Zarquan/agents/scratch:rw,Z" \
         --env    "DSH_HOME=/opt/dsh" \
         --volume "${LITHOSIA_CODE:?}/dsh:/opt/dsh:rw,Z" \
         --secret 'dsh-github-token-uksrc' \

@@ -1,0 +1,154 @@
+#
+# <meta:header>
+#   <meta:licence>
+#     Copyright (C) 2026 by Wizzard Solutions Ltd, wizzard@metagrid.co.uk
+#
+#     This information is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This information is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#   </meta:licence>
+# </meta:header>
+#
+#zrq-notes-indent
+#
+# AIMetrics: []
+#
+
+    Target:
+
+        Launch the DeepSeek harness in a container.
+
+    Result:
+
+
+
+# -----------------------------------------------------
+# Create a podman secrets for our GITHUB_TOKENs.
+#[user@desktop]
+
+    ~/bin/getsecret 'github.dsh-token-uksrc' \
+    | podman secret create \
+        --replace \
+        'dsh-github-token-uksrc' \
+        -
+
+    ~/bin/getsecret 'github.dsh-token-zarquan' \
+    | podman secret create \
+        --replace \
+        'dsh-github-token-zarquan' \
+        -
+
+
+--START--
+b4447fa6d9d4fb82f4a83b210
+3a996354dc3450cb9c582c70c
+--END--
+
+
+# -----------------------------------------------------
+# Launch the container with our projects mounted as volumes.
+#[user@desktop]
+
+    source "${HOME:?}/agents.env"
+    source "${HOME:?}/lithosia.env"
+    source "${HOME:?}/calycopis.env"
+    source "${HOME:?}/jordanita.env"
+
+    source "${CALYCOPIS_CODE}/bin/container-host.sh"
+
+    podman network create \
+        --ignore \
+        "lithosia-dsh-net"
+
+    podman pod create \
+        --replace \
+        --name    "lithosia-dsh-pod" \
+        --network "lithosia-dsh-net" \
+        --publish 3081:3081
+
+    podman run \
+        --rm \
+        --tty \
+        --interactive \
+        --pod    "lithosia-dsh-pod" \
+        --name   "lithosia-dsh-container" \
+        --env    "SSH_AUTH_SOCK=/tmp/ssh-sock" \
+        --volume "${SSH_AUTH_SOCK}:/tmp/ssh-sock:rw,Z" \
+        --env    "CONTAINER_HOST=unix:///run/podman/podman.sock" \
+        --volume "${HOST_CONTAINER_PATH}:/run/podman/podman.sock:rw,Z" \
+        --env    "CALYCOPIS_CODE=/Calycopis/Calycopis-broker" \
+        --volume "${CALYCOPIS_CODE:?}:/Calycopis/Calycopis-broker:rw,Z" \
+        --env    "TREBULA_CODE=/Calycopis/Calycopis-openapi" \
+        --volume "${TREBULA_CODE:?}:/Calycopis/Calycopis-openapi:rw,Z" \
+        --env    "ISOBEON_CODE=/Calycopis/Calycopis-isobeon" \
+        --volume "${ISOBEON_CODE:?}:/Calycopis/Calycopis-isobeon:rw,Z" \
+        --env    "LITHOSIA_CODE=/Zarquan/Lithosia-docker" \
+        --volume "${LITHOSIA_CODE:?}:/Zarquan/Lithosia-docker:rw,Z" \
+        --env    "JORDANITA_CODE=/Zarquan/Jordanita" \
+        --volume "${JORDANITA_CODE:?}:/Zarquan/Jordanita:rw,Z" \
+        --env    "PHYLLONORYCTER_CODE=/Zarquan/Phyllonorycter-archive" \
+        --volume "${PHYLLONORYCTER_CODE:?}:/Zarquan/Phyllonorycter-archive:rw,Z" \
+        --env    "ACSALA_CODE=/Zarquan/Acsala-agents" \
+        --volume "${ACSALA_CODE:?}:/Zarquan/Acsala-agents:rw,Z" \
+        --env    "CALYCOPIS_SCRATCH=/Calycopis/agents/scratch" \
+        --volume "${AGENTS_SCRATCH:?}:/Calycopis/agents/scratch:rw,Z" \
+        --env    "ZARQUAN_SCRATCH=/Zarquan/agents/scratch" \
+        --volume "${AGENTS_SCRATCH:?}:/Zarquan/agents/scratch:rw,Z" \
+        --env    "DSH_HOME=/opt/dsh" \
+        --volume "${DSH_HOME:?}:/opt/dsh:rw,Z" \
+        --secret 'dsh-github-token-uksrc' \
+        --secret 'dsh-github-token-zarquan' \
+        localhost/zarquan/lithosia-quadra:latest \
+            bash
+
+--START--
+....
+....
+--END--
+
+
+# -----------------------------------------------------
+# Run our initialisation script.
+# ** only required the first time this combination of container and workspace are used.
+#[root@lithosia-dsh-pod]
+
+    /usr/local/bin/init-dsh.sh
+
+--START--
+....
+....
+--END--
+
+
+# -----------------------------------------------------
+# Run the DSH web profile.
+#[root@lithosia-dsh-pod]
+
+    dsh web --no-open
+
+    >   dsh web: http://127.0.0.1:3080/?token=....
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# Login to the harness from the desktop, using the token.
+#[user@desktop]
+
+    firefox \
+        --new-window \
+        'http://127.0.0.1:3081/?token=....'
+
+
+
+
+
+
