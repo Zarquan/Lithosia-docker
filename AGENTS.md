@@ -158,6 +158,26 @@
         "value": 3,
         "units": "%"
         }
+      },
+      {
+      "interval": "2026-10-26T05:06:08/2026-10-26T05:08:00",
+      "name": "@deepseek-ai/dsh",
+      "version": "0.2.0-rc.2",
+      "model": "deepseek-v4.1-flash-1017",
+      "contribution": {
+        "value": 15,
+        "units": "%"
+        }
+      },
+      {
+      "interval": "2026-10-26T05:30:04/2026-10-26T05:32:00",
+      "name": "@deepseek-ai/dsh",
+      "version": "0.2.0-rc.2",
+      "model": "deepseek-v4.1-flash-1017",
+      "contribution": {
+        "value": 1,
+        "units": "%"
+        }
       }
     ]
 -->
@@ -170,31 +190,37 @@ Guidance for AI agents working in this repository. Humans should start with
 
 ## What this is
 
-Notes and tooling for running the **DeepSeek Harness (DSH)** inside the
-Calycopis developer container. There is no application code: the tracked
-content is one migration tool plus dated operational notes. The project is named
+Container image, notes and migration tooling for running the **DeepSeek
+Harness (DSH)** inside the Calycopis developer container. The project is named
 after the moth *Lithosia quadra*.
+
+The shared agent rules, hooks and GitHub tooling now live in
+[`Zarquan/Acsala-agents`](https://github.com/Zarquan/Acsala-agents). This
+repository keeps its own copies until the submodule work replaces them.
 
 ## Layout
 
 | Path | In git | What it is |
 |---|---|---|
-| `dsh/` | **no** (`.gitignore`) | the **live** DSH home: sessions, storages, profiles, backups, credentials |
+| `dsh/` | README only | **deprecated placeholder**; the live DSH home is outside the clone, mounted at `/opt/dsh` |
+| `agents/scratch/` | README only | **deprecated placeholder**; shared scratch is mounted at `/Zarquan/agents/scratch` and `/Calycopis/agents/scratch` |
 | `tools/migration/` | yes | session rebase tool and its runbook (`MIGRATION-README.md`) |
-| `agents/rules/` | yes | coding rules, shared with Calycopis-broker and Calycopis-openapi |
+| `agents/rules/` | yes | coding rules, duplicated in Acsala-agents, Calycopis-broker and Calycopis-openapi; removal pending |
 | `agents/git-identity.env` | yes | the identity used as the author of agent commits |
 | `agents/hooks/` | yes | versioned git hooks, currently the DCO guard |
-| `bin/` | yes | agent tooling: `agent-commit`, `setup-agent-git`, `gh` |
+| `bin/` | yes | agent tooling: `agent-commit`, `setup-agent-git`, `gh`; removal pending |
 | `notes/` | yes | dated operational notes |
 | `docker/Dockerfile` | yes | container image: DSH, the web proxy plugin, `gh` |
 | `attic/sessions/` | **no** (`.gitignore`) | pre-transfer session directories, **not referenced by any tool** |
 
 ## Non-negotiable safety rules
 
-1. **Never commit anything under `dsh/`.** It is gitignored deliberately. It
+1. **Never commit the live DSH home.** It is not in this repository: the
+   harness home is a separate host directory mounted at `/opt/dsh`, and it
    holds `.credentials.yaml` (secrets), real session logs and the live workspace
-   registry. Do not read or print `.credentials.yaml`, and never `git add -f
-   dsh/`.
+   registry. Do not read or print `.credentials.yaml`, do not copy it into the
+   repository, and never `git add -f` anything from it. The `dsh/` directory
+   here is only a deprecated placeholder.
 2. **Stop `dsh web` before editing durable state offline.** The host caches the
    workspace registry in memory and rewrites `storages/workspace.json` on its
    next mutation, which clobbers offline edits made underneath it. The migration
@@ -202,14 +228,22 @@ after the moth *Lithosia quadra*.
    acceptable against a throwaway copy.
 3. **Preview before applying.** `--dry-run` writes nothing and is safe while the
    host is running.
-4. **Never experiment against the live `dsh/` tree.** Copy it and work on the
-   copy (recipe below).
+4. **Never experiment against the live home.** Copy `/opt/dsh` (or the host
+   directory behind it) and work on the copy (recipe below).
 
 ## Environment
 
 - `DSH_HOME=/opt/dsh` is the harness home, mounted separately from the source
-  (see [Running the container](README.md#running-the-container)); projects are
-  mounted at `/Calycopis/…` and `/Zarquan/lithosia-quadra`.
+  (see [Running the container](README.md#running-the-container)). On the host,
+  `DSH_HOME` names the dedicated host directory; inside the container it is
+  `/opt/dsh`. Projects are mounted at `/Calycopis/...`, `/Zarquan/Lithosia-docker`,
+  `/Zarquan/Acsala-agents`, `/Zarquan/Jordanita` and
+  `/Zarquan/Phyllonorycter-archive`.
+- Agent scratch is a separate shared mount, not part of any repository: the
+  host's `${AGENTS_SCRATCH}` is mounted at `/Zarquan/agents/scratch` and
+  `/Calycopis/agents/scratch`, exported inside the container as
+  `ZARQUAN_SCRATCH` and `CALYCOPIS_SCRATCH`. The `agents/scratch/` directory in
+  this clone is a deprecated placeholder.
 - DSH is installed globally: `@deepseek-ai/dsh` **0.2.0-rc.2** under
   `/usr/local/lib/node_modules/@deepseek-ai/dsh`. Reading its `lib/` is the
   fastest way to confirm how DSH behaves — the specs the migration tool pins are
@@ -271,8 +305,9 @@ Practical consequences here:
 
 ### Git remotes and the GitHub token
 
-`origin` is an SSH remote, but the agent container has no SSH key and no global
-git config, so every `origin`-based command fails here:
+`origin` is an SSH remote, and SSH access from the container is not usable: there
+is no `known_hosts` entry for `github.com` and no global git config, so every
+`origin`-based command fails here:
 
 ```
 git fetch origin          # Host key verification failed
@@ -280,13 +315,11 @@ git push  origin HEAD     # Host key verification failed
 git remote prune origin   # Host key verification failed
 ```
 
-**This is a temporary workaround, not the intended arrangement.** Three
-long-term options are on the table and none is chosen yet: giving the container
-a valid SSH key; changing `origin` to an HTTPS URL; or leaving `origin` alone
-and driving HTTPS through a named remote with a persistent credential helper.
-Until one is picked, authenticate the *individual command* with the mounted
-secret rather than editing the remote, so `.git/config` and the human's own
-clone stay untouched.
+**This is a temporary workaround, not the intended arrangement.** Changing
+`origin` to an HTTPS URL, or driving HTTPS through a named remote with a
+persistent credential helper, are the alternatives. Until one is chosen,
+authenticate the *individual command* with the mounted secret rather than editing
+the remote, so `.git/config` and the human's own clone stay untouched.
 
 There are **two** tokens, one per organisation, because the permissions are
 granted separately and neither covers the other:
@@ -332,7 +365,7 @@ esac
 ASKPASS
 chmod 700 "$askpass"
 
-URL=https://github.com/Zarquan/lithosia-quadra.git
+URL=https://github.com/Zarquan/Lithosia-docker.git
 
 # Fetch main, updating only the remote-tracking ref.
 GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 \
@@ -360,7 +393,7 @@ GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 \
 If you would rather type a remote name than a URL, add one for the session:
 
 ```bash
-git remote add origin-http https://github.com/Zarquan/lithosia-quadra.git
+git remote add origin-http https://github.com/Zarquan/Lithosia-docker.git
 git fetch origin-http
 git push  origin-http HEAD:refs/heads/<branch>
 git remote remove origin-http     # when done; it is only a convenience
@@ -374,14 +407,14 @@ Read-only checks need no credential at all on a public repository, which is the
 cheapest way to confirm a push landed:
 
 ```bash
-git ls-remote https://github.com/Zarquan/lithosia-quadra.git refs/heads/main
+git ls-remote https://github.com/Zarquan/Lithosia-docker.git refs/heads/main
 ```
 
 Opening the pull request is simpler than the transport, because `bin/gh` already
 reads the same secret. This uses the default, Zarquan, token:
 
 ```bash
-bin/gh pr create --repo Zarquan/lithosia-quadra \
+bin/gh pr create --repo Zarquan/Lithosia-docker \
     --base main --head <branch> \
     --title "<title>" --body-file <file>
 ```
@@ -469,10 +502,11 @@ the live home:
 ```bash
 # 1. Throwaway copy of the sessions and the three storage artifacts, plus
 #    reference copies of the artifacts to compare against after a rollback.
+H=/opt/dsh
 rm -rf .scratch && mkdir -p .scratch/dsh/storages
-cp -a dsh/sessions .scratch/dsh/sessions
-cp -a dsh/storages/workspace.json dsh/storages/session_projcache.json .scratch/dsh/storages/
-cp -a dsh/storages/session_projcache .scratch/dsh/storages/session_projcache
+cp -a "$H"/sessions .scratch/dsh/sessions
+cp -a "$H"/storages/workspace.json "$H"/storages/session_projcache.json .scratch/dsh/storages/
+cp -a "$H"/storages/session_projcache .scratch/dsh/storages/session_projcache
 cp .scratch/dsh/storages/workspace.json .scratch/ws.orig.json
 cp .scratch/dsh/storages/session_projcache.json .scratch/cache.orig.json
 
@@ -505,10 +539,13 @@ directory when finished — nothing here is gitignored.
 ## Coding rules
 
 Each rule in [`agents/rules/`](agents/rules/) carries a shared core and a
-project-local block. The core is identical across this project,
-Calycopis-broker and Calycopis-openapi; only the frontmatter and the
-project-local block differ between them. They apply to every file an agent
-creates or modifies, and to every agent commit message.
+project-local block. The same rules are now versioned in
+[`Zarquan/Acsala-agents`](https://github.com/Zarquan/Acsala-agents) and are still
+duplicated here, in Calycopis-broker and in Calycopis-openapi; only the
+frontmatter and the project-local block differ between them. The copies kept
+here are byte-identical to Acsala's and will be replaced once the submodule work
+lands. They apply to every file an agent creates or modifies, and to every agent
+commit message.
 
 | Rule | Requirement |
 |---|---|
