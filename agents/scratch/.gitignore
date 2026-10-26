@@ -1,0 +1,4 @@
+# Keep only the deprecation notice; ignore anything written here.
+*
+!.gitignore
+!README.md
